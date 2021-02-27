@@ -5,8 +5,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
 
+import org.openlca.core.database.Daos;
 import org.openlca.core.database.IDatabase;
+import org.openlca.core.model.ModelType;
 import org.openlca.validation.Item.Type;
 
 public class Validation implements Runnable {
@@ -18,9 +21,9 @@ public class Validation implements Runnable {
   private int maxIssues = -1;
   private boolean skipWarnings = false;
 
-  final BlockingQueue<Item> queue = new ArrayBlockingQueue<>(100);
+  private final BlockingQueue<Item> queue = new ArrayBlockingQueue<>(100);
   private volatile boolean stopped = false;
-  final Item FINISH = Item.ok("_finished");
+  private final Item FINISH = Item.ok("_finished");
 
   private Validation(IDatabase db) {
     this.db = db;
@@ -53,13 +56,15 @@ public class Validation implements Runnable {
     return Collections.unmodifiableList(items);
   }
 
-  boolean hasStopped() {
-    return stopped;
-  }
-
   @Override
   public void run() {
+    var workers = new Runnable[] { new CategoryValidation(this), new UnitValidation(this), };
     int activeWorkers = 0;
+    var threads = Executors.newFixedThreadPool(8);
+    for (var worker : workers) {
+      activeWorkers++;
+      threads.execute(worker);
+    }
 
     while (activeWorkers > 0) {
       try {
@@ -68,8 +73,7 @@ public class Validation implements Runnable {
           activeWorkers--;
           continue;
         }
-        if (stopped
-          || (skipWarnings && item.type == Type.WARNING)) {
+        if (stopped || (skipWarnings && item.type == Type.WARNING)) {
           continue;
         }
         items.add(item);
@@ -77,9 +81,36 @@ public class Validation implements Runnable {
           stopped = true;
         }
       } catch (Exception e) {
-        throw new RuntimeException(
-          "failed to get item from validation queue", e);
+        throw new RuntimeException("failed to get item from validation queue", e);
       }
     }
+    threads.shutdown();
   }
+
+  boolean hasStopped() {
+    return stopped;
+  }
+
+  void workerFinished() {
+    queue.add(FINISH);
+  }
+
+  void ok(String message) {
+    queue.add(Item.ok(message));
+  }
+
+  void error(String message, Throwable e) {
+    queue.add(Item.error(message, e));
+  }
+
+  void error(long id, ModelType type, String message) {
+    try {
+      var dao = Daos.root(db, type);
+      var d = dao.getDescriptor(id);
+      queue.add(Item.error(d, message));
+    } catch (Exception e) {
+      error("failed to get descriptor " + type + "@" + id, e);
+    }
+  }
+
 }

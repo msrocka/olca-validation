@@ -4,6 +4,7 @@ package org.openlca.validation;
 import java.util.Optional;
 
 import org.openlca.core.model.descriptors.Descriptor;
+import org.slf4j.LoggerFactory;
 
 public class Item {
 
@@ -29,6 +30,13 @@ public class Item {
 
   static Item error (String message) {
     return new Item(Type.ERROR, null, message);
+  }
+
+  static Item error(String message, Throwable err) {
+    var m = message + ": " + err.getMessage();
+    var log = LoggerFactory.getLogger(Validation.class);
+    log.error(message, err);
+    return error(m);
   }
 
 	static Item error(Descriptor model, String message) {
