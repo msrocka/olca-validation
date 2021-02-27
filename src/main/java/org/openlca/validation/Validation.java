@@ -8,23 +8,19 @@ import org.openlca.core.database.IDatabase;
 public class Validation {
 
   final IDatabase db;
-  final List<Issue> errors = new ArrayList<>();
-  final List<Issue> warnings = new ArrayList<>();
-  boolean withWarnings = false;
-  int maxIssues = -1;
+  final IdSet ids;
+
+  private final List<Issue> collected = new ArrayList<>();
+  private int maxIssues = -1;
 
 
   private Validation(IDatabase db) {
     this.db = db;
+    this.ids = IdSet.of(db);
   }
 
   public static Validation on(IDatabase db) {
     return new Validation(db);
-  }
-
-  public Validation withWarnings(boolean b) {
-    this.withWarnings = b;
-    return this;
   }
 
   public Validation withMaxIssues(int c) {
@@ -44,5 +40,8 @@ public class Validation {
     return issues;
   }
 
+  private void push(Issue issue) {
+
+  }
 
 }

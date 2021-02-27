@@ -6,7 +6,7 @@ import org.openlca.core.model.ModelType;
 public class IdSetBenchmark {
 
   public static void main(String[] args) {
-    try (var db = DerbyDatabase.fromDataDir("ei22")) {
+    try (var db = DerbyDatabase.fromDataDir("ei2")) {
       for (int i = 0; i < 10; i++) {
         var start = System.currentTimeMillis();
         var ids = IdSet.of(db);
