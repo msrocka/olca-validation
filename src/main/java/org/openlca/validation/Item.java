@@ -1,34 +1,32 @@
 package org.openlca.validation;
 
 
-import java.util.Optional;
-
 import org.openlca.core.model.descriptors.Descriptor;
 import org.slf4j.LoggerFactory;
 
 public class Item {
 
-	public enum Type {
-		ERROR,
+  public enum Type {
+    ERROR,
     WARNING,
     OK,
-	}
+  }
 
-	public final Type type;
-	public final Optional<Descriptor> model;
-	public final String message;
+  public final Type type;
+  public final Descriptor model;
+  public final String message;
 
-	Item (Type type, Descriptor model, String message) {
-		this.type = type;
-		this.model = Optional.ofNullable(model);
-		this.message = message;
-	}
+  Item(Type type, Descriptor model, String message) {
+    this.type = type;
+    this.model = model;
+    this.message = message;
+  }
 
   static Item ok(String message) {
     return new Item(Type.OK, null, message);
   }
 
-  static Item error (String message) {
+  static Item error(String message) {
     return new Item(Type.ERROR, null, message);
   }
 
@@ -39,11 +37,22 @@ public class Item {
     return error(m);
   }
 
-	static Item error(Descriptor model, String message) {
-		return new Item(Type.ERROR, model, message);
-	}
+  static Item error(Descriptor model, String message) {
+    return new Item(Type.ERROR, model, message);
+  }
 
-	static Item warning(Descriptor model, String message) {
-		return new Item(Type.WARNING, model, message);
-	}
+  static Item warning(String message) {
+    return new Item(Type.WARNING, null, message);
+  }
+
+  static Item warning(Descriptor model, String message) {
+    return new Item(Type.WARNING, model, message);
+  }
+
+  @Override
+  public String toString() {
+    return model == null
+      ? type + ": " + message
+      : type + ": " + message + "; model=" + model;
+  }
 }

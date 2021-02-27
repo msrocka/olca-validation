@@ -32,13 +32,9 @@ for (var item : validation.getItems()) {
 
 The following validation checks are currently implemented:
 
-- [ ] check that each unit has a unit group; error
-
-- [ ] check that there are no duplicate unit names; warning
-
+* categories: valid parent categories
+* units: valid names, reference IDs, conversion factors, no duplicates, valid
+  group links
 
 TODO:
-
 * example for cancelling
-
-*

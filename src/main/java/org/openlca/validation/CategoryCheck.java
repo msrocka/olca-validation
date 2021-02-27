@@ -5,11 +5,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.model.ModelType;
 
-class CategoryValidation implements Runnable {
+class CategoryCheck implements Runnable {
 
   private final Validation v;
 
-  CategoryValidation(Validation v) {
+  CategoryCheck(Validation v) {
     this.v = v;
   }
 

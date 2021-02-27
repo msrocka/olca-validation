@@ -45,8 +45,8 @@ public class Validation implements Runnable {
   }
 
   /**
-   * Cancels a running validation. This does not mean that the validation is
-   * canceled
+   * Cancels a running validation. It may takes a bit until the separate
+   * validation workers stop after the cancel signal was sent.
    */
   public void cancel() {
     stopped = true;
@@ -58,7 +58,7 @@ public class Validation implements Runnable {
 
   @Override
   public void run() {
-    var workers = new Runnable[] { new CategoryValidation(this), new UnitValidation(this), };
+    var workers = new Runnable[] { new CategoryCheck(this), new UnitCheck(this), };
     int activeWorkers = 0;
     var threads = Executors.newFixedThreadPool(8);
     for (var worker : workers) {
@@ -111,6 +111,10 @@ public class Validation implements Runnable {
     } catch (Exception e) {
       error("failed to get descriptor " + type + "@" + id, e);
     }
+  }
+
+  void warning(String message) {
+    queue.add(Item.warning(message));
   }
 
 }
