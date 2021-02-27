@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import gnu.trove.set.hash.TLongHashSet;
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.model.ModelType;
 import org.openlca.util.Strings;
@@ -19,19 +20,19 @@ class UnitCheck implements Runnable {
   @Override
   public void run() {
     try {
-      checkUnits();
+      var unitIDs = checkUnits();
+      checkGroups(unitIDs);
     } catch (Exception e) {
       v.error("error in unit validation", e);
     } finally {
       v.workerFinished();
     }
-
-    // NativeSql.on(db).query(query, handler);
   }
 
-  private void checkUnits() {
+  private TLongHashSet checkUnits() {
     if (v.hasStopped())
-      return;
+      return new TLongHashSet(0);
+    var unitIDs = new TLongHashSet();
     var noErrors = new AtomicBoolean(true);
     var names = new HashSet<String>();
     var sql = "select " +
@@ -42,7 +43,9 @@ class UnitCheck implements Runnable {
       /* 5 */ "f_unit_group, " +
       /* 6 */ "synonyms from tbl_units";
     NativeSql.on(v.db).query(sql, r -> {
+
       long id = r.getLong(1);
+      unitIDs.add(id);
 
       var refID = r.getString(2);
       if (Strings.nullOrEmpty(refID)) {
@@ -99,6 +102,43 @@ class UnitCheck implements Runnable {
     if (noErrors.get()) {
       v.ok("no unit errors found");
     }
+    return unitIDs;
+  }
+
+  private void checkGroups(TLongHashSet unitIDs) {
+    if (v.hasStopped())
+      return;
+
+    var noErrors = new AtomicBoolean(true);
+    var sql = "select " +
+      /* 1 */ "id, " +
+      /* 2 */ "f_reference_unit, " +
+      /* 3 */ "f_default_flow_property from tbl_unit_groups";
+    NativeSql.on(v.db).query(sql, r -> {
+
+      var id = r.getLong(1);
+      var unitID = r.getLong(2);
+      if (!unitIDs.contains(unitID)) {
+        v.error(id, ModelType.UNIT_GROUP,
+          "invalid reference unit @" + unitID);
+        noErrors.set(false);
+      }
+
+      var propID = r.getLong(3);
+      if (propID != 0
+        && !v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
+        v.warning(id, ModelType.UNIT_GROUP,
+          "invalid link to default property @" + propID);
+        noErrors.set(false);
+      }
+
+      return !v.hasStopped();
+    });
+
+    if (noErrors.get()) {
+      v.ok("no errors in references of unit groups");
+    }
+
   }
 
 }

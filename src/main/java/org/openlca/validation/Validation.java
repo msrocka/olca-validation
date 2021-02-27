@@ -59,6 +59,8 @@ public class Validation implements Runnable {
 
   @Override
   public void run() {
+    long start = System.currentTimeMillis();
+
     var workers = new Runnable[]{
       new RootFieldCheck(this),
       new UnitCheck(this),
@@ -89,6 +91,16 @@ public class Validation implements Runnable {
       }
     }
     threads.shutdown();
+
+    // add the validation time
+    var time = (System.currentTimeMillis() - start) / 1000.0;
+    var unit = "seconds";
+    if (time > 60) {
+      time /= 60.0;
+      unit = "minutes";
+    }
+    items.add(Item.ok(
+      String.format("Validated database in %.2f %s", time, unit)));
   }
 
   boolean hasStopped() {
