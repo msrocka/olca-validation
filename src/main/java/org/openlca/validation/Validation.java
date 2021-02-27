@@ -49,6 +49,7 @@ public class Validation implements Runnable {
    * validation workers stop after the cancel signal was sent.
    */
   public void cancel() {
+    queue.add(Item.ok("validation cancelled"));
     stopped = true;
   }
 
@@ -58,7 +59,10 @@ public class Validation implements Runnable {
 
   @Override
   public void run() {
-    var workers = new Runnable[] { new CategoryCheck(this), new UnitCheck(this), };
+    var workers = new Runnable[]{
+      new RootFieldCheck(this),
+      new UnitCheck(this),
+    };
     int activeWorkers = 0;
     var threads = Executors.newFixedThreadPool(8);
     for (var worker : workers) {
@@ -108,6 +112,16 @@ public class Validation implements Runnable {
       var dao = Daos.root(db, type);
       var d = dao.getDescriptor(id);
       queue.add(Item.error(d, message));
+    } catch (Exception e) {
+      error("failed to get descriptor " + type + "@" + id, e);
+    }
+  }
+
+  void warning(long id, ModelType type, String message) {
+    try {
+      var dao = Daos.root(db, type);
+      var d = dao.getDescriptor(id);
+      queue.add(Item.warning(d, message));
     } catch (Exception e) {
       error("failed to get descriptor " + type + "@" + id, e);
     }

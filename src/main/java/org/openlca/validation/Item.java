@@ -1,6 +1,5 @@
 package org.openlca.validation;
 
-
 import org.openlca.core.model.descriptors.Descriptor;
 import org.slf4j.LoggerFactory;
 

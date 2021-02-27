@@ -70,7 +70,6 @@ class UnitCheck implements Runnable {
       if (!v.ids.contains(ModelType.UNIT_GROUP, groupID)) {
         v.error(id, ModelType.UNIT, "no unit group @" + groupID);
         noErrors.set(false);
-        return !v.hasStopped();
       }
 
       // name warning after errors
@@ -93,13 +92,13 @@ class UnitCheck implements Runnable {
               names.add(syn);
             }
           });
-        return !v.hasStopped();
       }
-
-
-
-      return true;
+      return !v.hasStopped();
     });
+
+    if (noErrors.get()) {
+      v.ok("no unit errors found");
+    }
   }
 
 }
