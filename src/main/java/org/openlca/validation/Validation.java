@@ -66,6 +66,7 @@ public class Validation implements Runnable {
       new UnitCheck(this),
       new FlowPropertyCheck(this),
       new FlowCheck(this),
+      new CurrencyCheck(this),
     };
     int activeWorkers = 0;
     var threads = Executors.newFixedThreadPool(8);
