@@ -16,11 +16,43 @@ class FlowCheck implements Runnable {
   @Override
   public void run() {
     try {
+      checkReferences();
       checkPropertyFactors();
     } catch (Exception e) {
       v.error("error in flow validation", e);
     } finally {
       v.workerFinished();
+    }
+  }
+
+  private void checkReferences() {
+    if (v.hasStopped())
+      return;
+    var noErrors = new AtomicBoolean(true);
+    var sql = "select " +
+      /* 1 */ "id, " +
+      /* 2 */ "f_reference_flow_property, " +
+      /* 3 */ "f_location from tbl_flows";
+    NativeSql.on(v.db).query(sql, r -> {
+      long id = r.getLong(1);
+
+      long propID = r.getLong(2);
+      if (!v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
+        v.error(id, ModelType.FLOW,
+          "invalid flow property reference @" + propID);
+        noErrors.set(false);
+      }
+
+      long locID = r.getLong(3);
+      if (locID != 0 && !v.ids.contains(ModelType.LOCATION, locID)) {
+        v.error(id, ModelType.FLOW, "invalid location reference @" + locID);
+        noErrors.set(false);
+      }
+
+      return !v.hasStopped();
+    });
+    if (noErrors.get()) {
+      v.ok("no errors in flow references");
     }
   }
 
@@ -49,15 +81,15 @@ class FlowCheck implements Runnable {
 
       double factor = r.getDouble(3);
       if (Double.compare(factor, 0) == 0) {
-          v.error(flowID, ModelType.FLOW,
-            "invalid flow property factor of 0 for property @" + propID);
-          noErrors.set(false);
+        v.error(flowID, ModelType.FLOW,
+          "invalid flow property factor of 0 for property @" + propID);
+        noErrors.set(false);
       }
       return !v.hasStopped();
     });
 
-     if (noErrors.get()) {
-       v.ok("no errors in flow property factors");
-     }
+    if (noErrors.get()) {
+      v.ok("no errors in flow property factors");
+    }
   }
 }
