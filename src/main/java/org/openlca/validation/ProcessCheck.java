@@ -17,6 +17,7 @@ class ProcessCheck implements Runnable {
   public void run() {
     try {
       checkProcessRefs();
+      checkProcessDocs();
       if (!foundErrors) {
         v.ok("checked processes");
       }
@@ -66,6 +67,47 @@ class ProcessCheck implements Runnable {
       return !v.hasStopped();
     });
     return qRefs;
+  }
+
+  private void checkProcessDocs() {
+    if (v.hasStopped())
+      return;
+    var sql = "select " +
+      /* 1 */ "p.id, " +
+      /* 2 */ "doc.f_reviewer, " +
+      /* 3 */ "doc.f_data_generator, " +
+      /* 4 */ "doc.f_dataset_owner, " +
+      /* 5 */ "doc.f_data_documentor, " +
+      /* 6 */ "doc.f_publication from tbl_processes p inner join " +
+              "tbl_process_docs doc on p.f_process_doc = doc.id";
+    var refs = new String[]{
+      "reviewer",
+      "data generator",
+      "data set owner",
+      "data documentor",
+      "publication",
+    };
+
+    NativeSql.on(v.db).query(sql, r -> {
+      var id = r.getLong(1);
+
+      for (int i = 0; i < refs.length; i++) {
+        var refID = r.getLong(i + 2);
+        if (refID == 0)
+          continue;
+        var type = i == 4
+          ? ModelType.SOURCE
+          : ModelType.ACTOR;
+        if (!v.ids.contains(type, refID)) {
+          v.warning(id, ModelType.PROCESS,
+            "invalid reference to " + refs[i] + " @" + refID);
+          foundErrors = true;
+        }
+      }
+      return !v.hasStopped();
+    });
+
+
   }
 
 }
