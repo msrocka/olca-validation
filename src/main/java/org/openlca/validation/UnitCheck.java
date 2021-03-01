@@ -2,7 +2,6 @@ package org.openlca.validation;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import gnu.trove.set.hash.TLongHashSet;
 import org.openlca.core.database.NativeSql;
@@ -12,6 +11,7 @@ import org.openlca.util.Strings;
 class UnitCheck implements Runnable {
 
   private final Validation v;
+  private boolean foundErrors = false;
 
   UnitCheck(Validation v) {
     this.v = v;
@@ -22,6 +22,9 @@ class UnitCheck implements Runnable {
     try {
       var unitIDs = checkUnits();
       checkGroups(unitIDs);
+      if (!foundErrors) {
+        v.ok("checked units");
+      }
     } catch (Exception e) {
       v.error("error in unit validation", e);
     } finally {
@@ -33,7 +36,6 @@ class UnitCheck implements Runnable {
     if (v.hasStopped())
       return new TLongHashSet(0);
     var unitIDs = new TLongHashSet();
-    var noErrors = new AtomicBoolean(true);
     var names = new HashSet<String>();
     var sql = "select " +
       /* 1 */ "id, " +
@@ -50,35 +52,32 @@ class UnitCheck implements Runnable {
       var refID = r.getString(2);
       if (Strings.nullOrEmpty(refID)) {
         v.error(id, ModelType.UNIT, "has no reference ID");
-        noErrors.set(false);
-        return !v.hasStopped();
+        foundErrors = true;
       }
 
       var name = r.getString(3);
       if (Strings.nullOrEmpty(name)) {
         v.error(id, ModelType.UNIT, "has empty name");
-        noErrors.set(false);
-        return !v.hasStopped();
+        foundErrors = true;
       }
 
       var factor = r.getDouble(4);
       if (factor <= 0) {
         v.error(id, ModelType.UNIT,
           "has invalid conversion factor: " + factor);
-        noErrors.set(false);
-        return !v.hasStopped();
+        foundErrors = true;
       }
 
       var groupID = r.getLong(5);
       if (!v.ids.contains(ModelType.UNIT_GROUP, groupID)) {
         v.error(id, ModelType.UNIT, "no unit group @" + groupID);
-        noErrors.set(false);
+        foundErrors = true;
       }
 
       // name warning after errors
       if (names.contains(name)) {
         v.warning("duplicate unit name / synonym: " + name);
-        noErrors.set(false);
+        foundErrors = true;
         return !v.hasStopped();
       }
       names.add(name);
@@ -90,7 +89,7 @@ class UnitCheck implements Runnable {
             if (Strings.notEmpty(syn)) {
               if (names.contains(syn)) {
                 v.warning("duplicate unit name / synonym: " + name);
-                noErrors.set(false);
+                foundErrors = true;
               }
               names.add(syn);
             }
@@ -99,9 +98,6 @@ class UnitCheck implements Runnable {
       return !v.hasStopped();
     });
 
-    if (noErrors.get()) {
-      v.ok("no unit errors found");
-    }
     return unitIDs;
   }
 
@@ -109,7 +105,6 @@ class UnitCheck implements Runnable {
     if (v.hasStopped())
       return;
 
-    var noErrors = new AtomicBoolean(true);
     var sql = "select " +
       /* 1 */ "id, " +
       /* 2 */ "f_reference_unit, " +
@@ -121,24 +116,18 @@ class UnitCheck implements Runnable {
       if (!unitIDs.contains(unitID)) {
         v.error(id, ModelType.UNIT_GROUP,
           "invalid reference unit @" + unitID);
-        noErrors.set(false);
+        foundErrors = true;
       }
 
       var propID = r.getLong(3);
-      if (propID != 0
-        && !v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
+      if (propID != 0  && !v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
         v.warning(id, ModelType.UNIT_GROUP,
           "invalid link to default property @" + propID);
-        noErrors.set(false);
+        foundErrors = true;
       }
 
       return !v.hasStopped();
     });
-
-    if (noErrors.get()) {
-      v.ok("no errors in references of unit groups");
-    }
-
   }
 
 }

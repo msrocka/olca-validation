@@ -44,6 +44,7 @@ class ProcessCheck implements Runnable {
       var qref = r.getLong(2);
       if (qref == 0) {
         v.warning(id, ModelType.PROCESS, "no quantitative reference");
+        foundErrors = true;
       } else {
         qRefs.add(qref);
       }
@@ -51,12 +52,14 @@ class ProcessCheck implements Runnable {
       var locID = r.getLong(3);
       if (locID != 0 && !v.ids.contains(ModelType.LOCATION, locID)) {
         v.error(id, ModelType.PROCESS, "invalid location @" + locID);
+        foundErrors = true;
       }
 
       for (long i = 4; i < 7; i++) {
         var dqID = r.getLong(4);
         if (dqID != 0 && !v.ids.contains(ModelType.DQ_SYSTEM, dqID)) {
           v.error(id, ModelType.PROCESS, "invalid DQ system @" + dqID);
+          foundErrors = true;
         }
       }
 

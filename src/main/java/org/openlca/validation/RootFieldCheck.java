@@ -1,7 +1,6 @@
 package org.openlca.validation;
 
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javax.persistence.Table;
 
 import org.openlca.core.database.NativeSql;
@@ -13,6 +12,7 @@ class RootFieldCheck implements Runnable {
 
   private final Validation v;
   private Set<String> _libs;
+  private boolean foundErrors = false;
 
   RootFieldCheck(Validation v) {
     this.v = v;
@@ -29,6 +29,9 @@ class RootFieldCheck implements Runnable {
           check(type);
         }
       }
+      if (!foundErrors) {
+        v.ok("checked root entity fields");
+      }
     } catch (Exception e) {
       v.error("failed to check basic fields", e);
     } finally {
@@ -43,7 +46,6 @@ class RootFieldCheck implements Runnable {
     if (table == null)
       return;
 
-    var noErrors = new AtomicBoolean(true);
     var sql = "select " +
       /* 1 */ "id, " +
       /* 2 */ "ref_id, " +
@@ -56,37 +58,31 @@ class RootFieldCheck implements Runnable {
       var refID = r.getString(2);
       if (Strings.nullOrEmpty(refID)) {
         v.error(id, type, "has no reference ID");
-        noErrors.set(false);
+        foundErrors = true;
       }
 
       var name = r.getString(3);
       if (Strings.nullOrEmpty(name)) {
         v.warning(id, type, "has an empty name");
-        noErrors.set(false);
+        foundErrors = true;
       }
 
       var category = r.getLong(4);
       if (category != 0
           && !v.ids.contains(ModelType.CATEGORY, category)) {
         v.error(id, type, "invalid category link @" + category);
-        noErrors.set(false);
+        foundErrors = true;
       }
 
       var library = r.getString(5);
       if (Strings.notEmpty(library)) {
         if (!libraries().contains(library)) {
           v.error(id, type, "points to unlinked library @" + library);
-          noErrors.set(false);
+          foundErrors = true;
         }
       }
       return !v.hasStopped();
     });
-
-    if (noErrors.get()) {
-      v.ok("no errors in basic fields of type "
-           + type.getModelClass().getSimpleName()
-           + "; table " + table.name());
-    }
   }
 
   private Set<String> libraries() {
