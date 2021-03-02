@@ -17,7 +17,9 @@ class ProcessCheck implements Runnable {
   public void run() {
     try {
       checkProcessRefs();
+      checkQuantitativeRefs();
       checkProcessDocs();
+      checkExchanges();
       if (!foundErrors) {
         v.ok("checked processes");
       }
@@ -28,36 +30,26 @@ class ProcessCheck implements Runnable {
     }
   }
 
-  private TLongHashSet checkProcessRefs() {
+  private void checkProcessRefs() {
     if (v.hasStopped())
-      return new TLongHashSet(0);
+      return;
     var sql = "select " +
       /* 1 */ "id, " +
-      /* 2 */ "f_quantitative_reference, " +
-      /* 3 */ "f_location, " +
-      /* 4 */ "f_dq_system, " +
-      /* 5 */ "f_exchange_dq_system, " +
-      /* 6 */ "f_social_dq_system from tbl_processes";
-    var qRefs = new TLongHashSet();
+      /* 2 */ "f_location, " +
+      /* 3 */ "f_dq_system, " +
+      /* 4 */ "f_exchange_dq_system, " +
+      /* 5 */ "f_social_dq_system from tbl_processes";
     NativeSql.on(v.db).query(sql, r -> {
       long id = r.getLong(1);
 
-      var qref = r.getLong(2);
-      if (qref == 0) {
-        v.warning(id, ModelType.PROCESS, "no quantitative reference");
-        foundErrors = true;
-      } else {
-        qRefs.add(qref);
-      }
-
-      var locID = r.getLong(3);
+      var locID = r.getLong(2);
       if (locID != 0 && !v.ids.contains(ModelType.LOCATION, locID)) {
         v.error(id, ModelType.PROCESS, "invalid location @" + locID);
         foundErrors = true;
       }
 
-      for (long i = 4; i < 7; i++) {
-        var dqID = r.getLong(4);
+      for (int i = 3; i < 6; i++) {
+        var dqID = r.getLong(i);
         if (dqID != 0 && !v.ids.contains(ModelType.DQ_SYSTEM, dqID)) {
           v.error(id, ModelType.PROCESS, "invalid DQ system @" + dqID);
           foundErrors = true;
@@ -66,7 +58,6 @@ class ProcessCheck implements Runnable {
 
       return !v.hasStopped();
     });
-    return qRefs;
   }
 
   private void checkProcessDocs() {
@@ -106,8 +97,78 @@ class ProcessCheck implements Runnable {
       }
       return !v.hasStopped();
     });
-
-
   }
 
+  private void checkQuantitativeRefs() {
+    if (v.hasStopped())
+      return;
+    var sql = "select p.id from tbl_processes p " +
+              "left join tbl_exchanges e on " +
+              "p.f_quantitative_reference = e.id " +
+              "where e.id is null";
+    NativeSql.on(v.db).query(sql, r -> {
+      long id = r.getLong(1);
+      v.warning(id, ModelType.PROCESS,
+        "no quantitative reference");
+      foundErrors = true;
+      return !v.hasStopped();
+    });
+  }
+
+  private void checkExchanges() {
+    if (v.hasStopped())
+      return;
+    var processIDs = v.ids.allOf(ModelType.PROCESS);
+    var sql = "select " +
+      /* 1 */ "f_owner, " +
+      /* 2 */ "f_unit, " +
+      /* 3 */ "f_flow_property_factor, " +
+      /* 4 */ "f_default_provider, " +
+      /* 5 */ "f_location, " +
+      /* 6 */ "f_currency from tbl_exchanges";
+
+    var errors = new TLongHashSet();
+    NativeSql.on(v.db).query(sql, r -> {
+      var id = r.getLong(1);
+      // only check processes that were not reported before
+      if (!processIDs.contains(id) || errors.contains(id))
+        return true;
+
+      var unitID = r.getLong(2);
+      if (!v.ids.contains(ModelType.UNIT, unitID)) {
+        v.error(id, ModelType.PROCESS,
+          "invalid exchange unit @" + unitID);
+        errors.add(id);
+      }
+
+      // TODO: check flow property factors
+
+      var providerID = r.getLong(4);
+      if (providerID != 0 && !processIDs.contains(providerID)) {
+        v.error(id, ModelType.PROCESS,
+          "invalid exchange provider @" + providerID);
+        errors.add(id);
+      }
+
+      var locID = r.getLong(5);
+      if (locID != 0 && !v.ids.contains(ModelType.LOCATION, locID)) {
+        v.error(id, ModelType.PROCESS,
+          "invalid exchange location @" + locID);
+        errors.add(id);
+      }
+
+      var currencyID = r.getLong(6);
+      if (currencyID != 0 && !v.ids.contains(ModelType.CURRENCY, currencyID)) {
+        v.error(id, ModelType.PROCESS,
+          "invalid exchange currency @" + currencyID);
+        errors.add(id);
+      }
+
+      return !v.hasStopped();
+    });
+
+    if (errors.size() > 0) {
+      foundErrors = true;
+    }
+  }
 }
