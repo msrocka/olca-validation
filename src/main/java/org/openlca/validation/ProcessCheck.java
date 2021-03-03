@@ -20,6 +20,7 @@ class ProcessCheck implements Runnable {
       checkQuantitativeRefs();
       checkProcessDocs();
       checkExchanges();
+      checkAllocationFactors();
       if (!foundErrors) {
         v.ok("checked processes");
       }
@@ -118,8 +119,17 @@ class ProcessCheck implements Runnable {
   private void checkExchanges() {
     if (v.hasStopped())
       return;
+
+    // first collect the IDs of flow property factors
+    var sql = "select id from tbl_flow_property_factors";
+    var propFactors = new TLongHashSet();
+    NativeSql.on(v.db).query(sql, r -> {
+      propFactors.add(r.getLong(1));
+      return true;
+    });
+
     var processIDs = v.ids.allOf(ModelType.PROCESS);
-    var sql = "select " +
+    sql = "select " +
       /* 1 */ "f_owner, " +
       /* 2 */ "f_unit, " +
       /* 3 */ "f_flow_property_factor, " +
@@ -141,7 +151,12 @@ class ProcessCheck implements Runnable {
         errors.add(id);
       }
 
-      // TODO: check flow property factors
+      var propID = r.getLong(3);
+      if (!propFactors.contains(propID)) {
+        v.error(id, ModelType.PROCESS,
+          "invalid exchange property @" + propID);
+        errors.add(id);
+      }
 
       var providerID = r.getLong(4);
       if (providerID != 0 && !processIDs.contains(providerID)) {
@@ -170,5 +185,44 @@ class ProcessCheck implements Runnable {
     if (errors.size() > 0) {
       foundErrors = true;
     }
+  }
+
+  private void checkAllocationFactors() {
+    if (v.hasStopped())
+      return;
+    var sql = "select " +
+      /* 1 */ "a.f_process, " +
+      /* 2 */ "a.f_product, " +
+      /* 3 */ "a.f_exchange, " +
+      /* 4 */ "e.id from tbl_allocation_factors a left " +
+              "join tbl_exchanges e on a.f_exchange = e.id";
+      NativeSql.on(v.db).query(sql, r ->{
+        var id = r.getLong(1);
+
+        if (!v.ids.contains(ModelType.PROCESS, id)) {
+          v.warning("allocation factor with invalid process ID @" + id);
+          foundErrors = true;
+          return !v.hasStopped();
+        }
+
+        var productID = r.getLong(2);
+        if (!v.ids.contains(ModelType.FLOW, productID)) {
+          v.error(id, ModelType.PROCESS,
+            "allocation factor with invalid product ID @" + productID);
+          foundErrors = true;
+        }
+
+        var exchangeID = r.getLong(3);
+        if (exchangeID != 0) {
+          var otherID = r.getLong(4);
+          if (exchangeID != otherID) {
+            v.error(id, ModelType.PROCESS,
+              "allocation factor with invalid exchange ID @" + exchangeID);
+            foundErrors = true;
+          }
+        }
+
+        return !v.hasStopped();
+      });
   }
 }
