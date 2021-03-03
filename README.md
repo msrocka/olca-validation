@@ -12,7 +12,7 @@ the `n` finish markers from the worker threads.
 
 There is also a synchronized stop flag. Before starting a larger chunk of work a
 worker should check this flag and if the flag indicates that the validation has
-stopped the worker should immediately send a finish a marker and stop its work.
+stopped the worker should immediately send a finish marker and stop its work.
 Also, before adding an item to the queue a worker should check this flag and, if
 the validation stopped, add the item followed by a finish marker and stop its
 work. The stop flag is used, for example, when the validation was cancelled or
@@ -30,11 +30,16 @@ for (var item : validation.getItems()) {
 }
 ```
 
-The following validation checks are currently implemented:
+The following things are currently checked:
 
-* categories: valid parent categories
-* units: valid names, reference IDs, conversion factors, no duplicates, valid
-  group links
-
-TODO:
-* example for cancelling
+* [x] root entity fields (id, ref-ID, category, name, library links)
+* [x] units and unit groups (references, duplicate unit names)
+* [x] flow properties (references)
+* [x] flows (references, conversion factors)
+* [x] currencies
+* [ ] social indicators
+* [x] processes (references, also in exchanges, allocation factors,
+      social aspects)
+* [ ] impact categories
+* [ ] impact methods
+* [ ] projects
