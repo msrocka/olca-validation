@@ -37,7 +37,7 @@ The following things are currently checked:
 * [x] flow properties (references)
 * [x] flows (references, conversion factors)
 * [x] currencies
-* [ ] social indicators
+* [x] social indicators
 * [x] processes (references, also in exchanges, allocation factors,
       social aspects)
 * [ ] impact categories

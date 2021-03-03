@@ -67,6 +67,7 @@ public class Validation implements Runnable {
       new FlowPropertyCheck(this),
       new FlowCheck(this),
       new CurrencyCheck(this),
+      new SocialIndicatorCheck(this),
       new ProcessCheck(this),
     };
     int activeWorkers = 0;

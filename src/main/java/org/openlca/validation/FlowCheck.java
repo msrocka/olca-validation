@@ -17,7 +17,7 @@ class FlowCheck implements Runnable {
     try {
       checkReferences();
       checkPropertyFactors();
-      if (!foundErrors) {
+      if (!foundErrors && !v.hasStopped()) {
         v.ok("checked flows");
       }
     } catch (Exception e) {

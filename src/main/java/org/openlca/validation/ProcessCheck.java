@@ -22,7 +22,7 @@ class ProcessCheck implements Runnable {
       checkExchanges();
       checkAllocationFactors();
       checkSocialAspects();
-      if (!foundErrors) {
+      if (!foundErrors && !v.hasStopped()) {
         v.ok("checked processes");
       }
     } catch (Exception e) {

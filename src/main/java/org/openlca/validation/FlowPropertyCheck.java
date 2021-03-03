@@ -16,7 +16,7 @@ class FlowPropertyCheck implements Runnable {
   public void run() {
     try {
       checkReferences();
-      if (!foundErrors) {
+      if (!foundErrors && !v.hasStopped()) {
         v.ok("checked flow properties");
       }
     } catch (Exception e) {

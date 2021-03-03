@@ -29,7 +29,7 @@ class RootFieldCheck implements Runnable {
           check(type);
         }
       }
-      if (!foundErrors) {
+      if (!foundErrors && !v.hasStopped()) {
         v.ok("checked root entity fields");
       }
     } catch (Exception e) {

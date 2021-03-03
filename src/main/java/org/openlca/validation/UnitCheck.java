@@ -22,8 +22,8 @@ class UnitCheck implements Runnable {
     try {
       var unitIDs = checkUnits();
       checkGroups(unitIDs);
-      if (!foundErrors) {
-        v.ok("checked units");
+      if (!foundErrors && !v.hasStopped()) {
+        v.ok("checked units and unit groups");
       }
     } catch (Exception e) {
       v.error("error in unit validation", e);
@@ -120,7 +120,7 @@ class UnitCheck implements Runnable {
       }
 
       var propID = r.getLong(3);
-      if (propID != 0  && !v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
+      if (propID != 0 && !v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
         v.warning(id, ModelType.UNIT_GROUP,
           "invalid link to default property @" + propID);
         foundErrors = true;

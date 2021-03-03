@@ -18,7 +18,7 @@ class CurrencyCheck implements Runnable {
       return;
     try {
       checkRefFactors();
-      if (!foundErrors) {
+      if (!foundErrors && !v.hasStopped()) {
         v.ok("checked currencies");
       }
     } catch (Exception e) {
