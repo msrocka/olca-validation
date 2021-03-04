@@ -1,6 +1,5 @@
 package org.openlca.validation;
 
-import gnu.trove.set.hash.TLongHashSet;
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.model.ModelType;
 
@@ -117,16 +116,9 @@ class ProcessCheck implements Runnable {
     if (v.hasStopped())
       return;
 
-    // first collect the IDs of flow property factors
-    var sql = "select id from tbl_flow_property_factors";
-    var propFactors = new TLongHashSet();
-    NativeSql.on(v.db).query(sql, r -> {
-      propFactors.add(r.getLong(1));
-      return true;
-    });
-
+    var propFactors = v.ids.flowPropertyFactors();
     var processIDs = v.ids.allOf(ModelType.PROCESS);
-    sql = "select " +
+    var sql = "select " +
       /* 1 */ "f_owner, " +
       /* 2 */ "f_unit, " +
       /* 3 */ "f_flow_property_factor, " +
@@ -134,54 +126,49 @@ class ProcessCheck implements Runnable {
       /* 5 */ "f_location, " +
       /* 6 */ "f_currency from tbl_exchanges";
 
-    var errors = new TLongHashSet();
     NativeSql.on(v.db).query(sql, r -> {
       var id = r.getLong(1);
-      // only check processes that were not reported before
-      if (!processIDs.contains(id) || errors.contains(id))
+
+      if (!processIDs.contains(id))
         return true;
 
       var unitID = r.getLong(2);
       if (!v.ids.contains(ModelType.UNIT, unitID)) {
         v.error(id, ModelType.PROCESS,
           "invalid exchange unit @" + unitID);
-        errors.add(id);
+        foundErrors = true;
       }
 
       var propID = r.getLong(3);
       if (!propFactors.contains(propID)) {
         v.error(id, ModelType.PROCESS,
           "invalid exchange property @" + propID);
-        errors.add(id);
+        foundErrors = true;
       }
 
       var providerID = r.getLong(4);
       if (providerID != 0 && !processIDs.contains(providerID)) {
         v.error(id, ModelType.PROCESS,
           "invalid exchange provider @" + providerID);
-        errors.add(id);
+        foundErrors = true;
       }
 
       var locID = r.getLong(5);
       if (locID != 0 && !v.ids.contains(ModelType.LOCATION, locID)) {
         v.error(id, ModelType.PROCESS,
           "invalid exchange location @" + locID);
-        errors.add(id);
+        foundErrors = true;
       }
 
       var currencyID = r.getLong(6);
       if (currencyID != 0 && !v.ids.contains(ModelType.CURRENCY, currencyID)) {
         v.error(id, ModelType.PROCESS,
           "invalid exchange currency @" + currencyID);
-        errors.add(id);
+        foundErrors = true;
       }
 
       return !v.hasStopped();
     });
-
-    if (errors.size() > 0) {
-      foundErrors = true;
-    }
   }
 
   private void checkAllocationFactors() {

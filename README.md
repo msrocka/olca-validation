@@ -36,10 +36,13 @@ The following things are currently checked:
 * [x] units and unit groups (references, duplicate unit names)
 * [x] flow properties (references)
 * [x] flows (references, conversion factors)
-* [x] currencies
-* [x] social indicators
+* [x] currencies (references, conversion factors)
+* [x] social indicators (references)
+* [ ] data quality factors
+* [ ] (global) parameters
 * [x] processes (references, also in exchanges, allocation factors,
       social aspects)
 * [ ] impact categories
+* [ ] formulas
 * [ ] impact methods
 * [ ] projects

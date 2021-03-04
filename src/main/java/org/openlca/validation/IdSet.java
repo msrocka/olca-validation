@@ -18,10 +18,12 @@ class IdSet {
 
   private final IDatabase db;
   private final EnumMap<ModelType, TLongHashSet> ids;
+  private final TLongHashSet propertyFactors;
 
   private IdSet(IDatabase db) {
     this.db = db;
     ids = new EnumMap<>(ModelType.class);
+    propertyFactors = new TLongHashSet();
   }
 
   public static IdSet of(IDatabase db) {
@@ -34,9 +36,11 @@ class IdSet {
     if (type == null || id <= 0)
       return false;
     var modelIDs = ids.get(type);
-    return modelIDs == null
-        ? false
-        : modelIDs.contains(id);
+    return modelIDs != null && modelIDs.contains(id);
+  }
+
+  public TLongHashSet flowPropertyFactors() {
+    return propertyFactors;
   }
 
   TLongHashSet allOf(ModelType type) {
@@ -50,13 +54,22 @@ class IdSet {
 
   private void fill() {
 
-    var service = Executors.newFixedThreadPool(4);
+    var service = Executors.newFixedThreadPool(8);
+
+    // start the ID collectors
     var futures = new ArrayList<Future<Pair<ModelType, TLongHashSet>>>();
     for (var type : ModelType.values()) {
       if (type.getModelClass() == null)
         continue;
       futures.add(service.submit(() -> of(type)));
     }
+    service.submit(() -> {
+      var sql = "select id from tbl_flow_property_factors";
+      NativeSql.on(db).query(sql, r -> {
+        propertyFactors.add(r.getLong(1));
+        return true;
+      });
+    });
 
     for (var future : futures) {
       try {
