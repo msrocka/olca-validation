@@ -38,11 +38,10 @@ The following things are currently checked:
 * [x] flows (references, conversion factors)
 * [x] currencies (references, conversion factors)
 * [x] social indicators (references)
-* [ ] data quality factors
-* [ ] (global) parameters
+* [x] data quality systems
 * [x] processes (references, also in exchanges, allocation factors,
-      social aspects)
-* [ ] impact categories
-* [ ] formulas
+  social aspects)
+* [x] impact categories
 * [ ] impact methods
+* [ ] parameters, formulas
 * [ ] projects
