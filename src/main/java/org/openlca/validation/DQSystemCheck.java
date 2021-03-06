@@ -35,7 +35,7 @@ class DQSystemCheck implements Runnable {
     NativeSql.on(v.db).query(sql, r -> {
       var id = r.getLong(1);
       var sourceID = r.getLong(2);
-      if (!v.ids.contains(ModelType.SOURCE, sourceID)) {
+      if (sourceID != 0 && !v.ids.contains(ModelType.SOURCE, sourceID)) {
         v.warning(id, ModelType.DQ_SYSTEM,
           "invalid reference to source @" + sourceID);
         foundError = true;

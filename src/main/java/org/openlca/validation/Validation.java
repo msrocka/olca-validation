@@ -71,6 +71,7 @@ public class Validation implements Runnable {
       new DQSystemCheck(this),
       new ProcessCheck(this),
       new ImpactCategoryCheck(this),
+      new ImpactMethodCheck(this),
     };
     int activeWorkers = 0;
     var threads = Executors.newFixedThreadPool(8);

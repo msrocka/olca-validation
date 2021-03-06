@@ -42,6 +42,6 @@ The following things are currently checked:
 * [x] processes (references, also in exchanges, allocation factors,
   social aspects)
 * [x] impact categories
-* [ ] impact methods
+* [x] impact methods
 * [ ] parameters, formulas
 * [ ] projects
