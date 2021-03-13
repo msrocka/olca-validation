@@ -1,7 +1,7 @@
 package org.openlca.validation;
 
+import org.openlca.core.database.Derby;
 import org.openlca.core.database.IDatabase;
-import org.openlca.core.database.derby.DerbyDatabase;
 
 class Tests {
 
@@ -10,7 +10,7 @@ class Tests {
   static IDatabase getDB() {
     if (_db != null)
       return _db;
-    _db = DerbyDatabase.createInMemory();
+    _db = Derby.createInMemory();
     return _db;
   }
 
