@@ -19,6 +19,8 @@ class UnitCheck implements Runnable {
 
   @Override
   public void run() {
+    if (v.hasStopped())
+      return;
     try {
       var unitIDs = checkUnits();
       checkGroups(unitIDs);

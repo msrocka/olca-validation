@@ -15,6 +15,8 @@ class DQSystemCheck implements Runnable {
 
   @Override
   public void run() {
+    if (v.hasStopped())
+      return;
     try {
       checkSourceLinks();
       checkIndicatorLinks();

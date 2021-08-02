@@ -14,9 +14,9 @@ class SocialIndicatorCheck implements Runnable {
 
   @Override
   public void run() {
+    if (v.hasStopped())
+      return;
     try {
-      if (v.hasStopped())
-        return;
       var sql = "select " +
         /* 1 */ "id, " +
         /* 2 */ "f_activity_quantity, " +
@@ -25,14 +25,14 @@ class SocialIndicatorCheck implements Runnable {
         var id = r.getLong(1);
 
         var propID = r.getLong(2);
-        if (!v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
+        if (propID != 0 && !v.ids.contains(ModelType.FLOW_PROPERTY, propID)) {
           v.error(id, ModelType.SOCIAL_INDICATOR,
             "invalid flow property link @" + propID);
           foundErrors = true;
         }
 
         var unitID = r.getLong(3);
-        if (!v.ids.contains(ModelType.UNIT, unitID)) {
+        if (unitID != 0 && !v.ids.contains(ModelType.UNIT, unitID)) {
           v.error(id, ModelType.SOCIAL_INDICATOR,
             "invalid unit link @" + unitID);
           foundErrors = true;

@@ -14,6 +14,8 @@ class ProcessCheck implements Runnable {
 
   @Override
   public void run() {
+    if (v.hasStopped())
+      return;
     try {
       checkProcessRefs();
       checkQuantitativeRefs();
