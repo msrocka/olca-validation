@@ -5,8 +5,7 @@ import java.util.EnumMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.persistence.Table;
-
+import jakarta.persistence.Table;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.model.ModelType;

@@ -1,8 +1,8 @@
 package org.openlca.validation;
 
 import java.util.Set;
-import javax.persistence.Table;
 
+import jakarta.persistence.Table;
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.model.CategorizedEntity;
 import org.openlca.core.model.ModelType;
