@@ -43,5 +43,5 @@ The following things are currently checked:
   social aspects)
 * [x] impact categories
 * [x] impact methods
+* [x] projects
 * [ ] parameters, formulas
-* [ ] projects
