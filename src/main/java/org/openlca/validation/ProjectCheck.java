@@ -69,6 +69,7 @@ class ProjectCheck implements Runnable {
 
       if (!v.ids.contains(ModelType.PROJECT, projectId)) {
         v.warning("unlinked project variant @" + variantId);
+        foundErrors = true;
         return !v.hasStopped();
       }
 
@@ -77,6 +78,7 @@ class ProjectCheck implements Runnable {
         v.error(projectId, ModelType.PROJECT,
           "invalid reference to product system @" + systemId
             + " in variant @" + variantId);
+        foundErrors = true;
         return !v.hasStopped();
       }
 
@@ -85,6 +87,7 @@ class ProjectCheck implements Runnable {
         v.error(projectId, ModelType.PROJECT,
           "invalid reference to unit @" + unitId
             + " in variant @" + variantId);
+        foundErrors = true;
       }
 
       long propId = r.getLong(5);
@@ -92,6 +95,7 @@ class ProjectCheck implements Runnable {
         v.error(projectId, ModelType.PROJECT,
           "invalid reference to flow property fact. @" + propId
             + " in variant @" + variantId);
+        foundErrors = true;
       }
 
       return !v.hasStopped();
