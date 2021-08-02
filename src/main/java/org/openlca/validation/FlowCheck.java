@@ -14,8 +14,6 @@ class FlowCheck implements Runnable {
 
   @Override
   public void run() {
-    if (v.hasStopped())
-      return;
     try {
       checkReferences();
       checkPropertyFactors();

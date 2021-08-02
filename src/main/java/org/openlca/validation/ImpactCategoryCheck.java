@@ -14,8 +14,6 @@ class ImpactCategoryCheck implements Runnable {
 
   @Override
   public void run() {
-    if (v.hasStopped())
-      return;
     try {
       checkFactors();
       if (!foundErrors && !v.hasStopped()) {

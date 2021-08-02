@@ -20,8 +20,6 @@ class RootFieldCheck implements Runnable {
 
   @Override
   public void run() {
-    if (v.hasStopped())
-      return;
     try {
       for (var type : ModelType.values()) {
         var clazz = type.getModelClass();

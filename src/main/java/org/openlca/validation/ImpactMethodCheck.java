@@ -15,8 +15,6 @@ class ImpactMethodCheck implements Runnable {
 
   @Override
   public void run() {
-    if (v.hasStopped())
-      return;
     try {
       checkImpactRefs();
       checkNwSets();

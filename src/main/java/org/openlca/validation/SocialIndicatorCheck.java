@@ -14,9 +14,9 @@ class SocialIndicatorCheck implements Runnable {
 
   @Override
   public void run() {
-    if (v.hasStopped())
-      return;
     try {
+      if (v.hasStopped())
+        return;
       var sql = "select " +
         /* 1 */ "id, " +
         /* 2 */ "f_activity_quantity, " +

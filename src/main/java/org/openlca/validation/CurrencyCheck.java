@@ -14,8 +14,6 @@ class CurrencyCheck implements Runnable {
 
   @Override
   public void run() {
-    if (v.hasStopped())
-      return;
     try {
       checkRefFactors();
       if (!foundErrors && !v.hasStopped()) {
@@ -29,6 +27,8 @@ class CurrencyCheck implements Runnable {
   }
 
   private void checkRefFactors() {
+    if (v.hasStopped())
+      return;
     var sql = "select " +
       /* 1 */ "id, " +
       /* 2 */ "f_reference_currency, " +

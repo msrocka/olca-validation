@@ -31,6 +31,10 @@ class IdSet {
     return ids;
   }
 
+  boolean containsOrZero(ModelType type, long id) {
+    return id == 0 || contains(type, id);
+  }
+
   boolean contains(ModelType type, long id) {
     if (type == null || id <= 0)
       return false;
