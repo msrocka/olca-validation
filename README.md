@@ -41,7 +41,8 @@ The following things are currently checked:
 * [x] data quality systems
 * [x] processes (references, also in exchanges, allocation factors,
   social aspects)
-* [x] impact categories
-* [x] impact methods
-* [x] projects
-* [ ] parameters, formulas
+* [x] impact categories (references)
+* [x] impact methods (references)
+* [x] projects (references)
+* [x] parameters, formulas
+* [ ] flow directions

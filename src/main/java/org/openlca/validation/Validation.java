@@ -74,6 +74,7 @@ public class Validation implements Runnable {
       new ImpactMethodCheck(this),
       new ProjectCheck(this),
       new FormulaCheck(this),
+      new FlowDirectionCheck(this),
     };
     int activeWorkers = 0;
     var threads = Executors.newFixedThreadPool(8);
