@@ -25,7 +25,7 @@ class FlowDirectionCheck implements Runnable {
 
       // collect the IDs of quantitative references
       var qrefs = new TLongHashSet();
-      var qrefQuery = "select f_quantitative_reference from tbl_exchanges";
+      var qrefQuery = "select f_quantitative_reference from tbl_processes";
       NativeSql.on(v.db).query(qrefQuery, r -> {
         qrefs.add(r.getLong(1));
         return true;
