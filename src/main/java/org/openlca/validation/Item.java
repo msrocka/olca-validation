@@ -48,6 +48,18 @@ public class Item {
     return new Item(Type.WARNING, model, message);
   }
 
+  public boolean isError() {
+    return type == Type.ERROR;
+  }
+
+  public boolean isOk() {
+    return type == Type.OK;
+  }
+
+  public boolean isWarning() {
+    return type == Type.WARNING;
+  }
+
   @Override
   public String toString() {
     return model == null
