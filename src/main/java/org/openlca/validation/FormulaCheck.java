@@ -1,5 +1,7 @@
 package org.openlca.validation;
 
+import java.util.function.Supplier;
+
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.model.ModelType;
 import org.openlca.core.model.ParameterScope;
@@ -10,6 +12,7 @@ class FormulaCheck implements Runnable {
 
   private final Validation v;
   private boolean foundErrors = false;
+  private FormulaInterpreter interpreter;
 
   FormulaCheck(Validation v) {
     this.v = v;
@@ -18,8 +21,11 @@ class FormulaCheck implements Runnable {
   @Override
   public void run() {
     try {
-      var interpreter = buildInterpreter();
-      checkParameterFormulas(interpreter);
+      interpreter = buildInterpreter();
+      checkParameterFormulas();
+      checkExchangeFormulas();
+      checkAllocationFormulas();
+      checkImpactFormulas();
       if (!foundErrors && !v.hasStopped()) {
         v.ok("checked formulas");
       }
@@ -72,7 +78,7 @@ class FormulaCheck implements Runnable {
     return interpreter;
   }
 
-  private void checkParameterFormulas(FormulaInterpreter interpreter) {
+  private void checkParameterFormulas() {
     if (v.hasStopped())
       return;
 
@@ -130,18 +136,78 @@ class FormulaCheck implements Runnable {
         return !v.hasStopped();
       }
 
-      try {
-        var scope = interpreter.getScopeOrGlobal(modelId);
-        scope.eval(formula);
-      } catch (Exception e) {
-        v.error(modelId, modelType,
-          "formula error in parameter '" + paramName + "': " + e.getMessage());
-        foundErrors = true;
-      }
+      check(modelId, modelType, formula, () -> String.format(
+        "error in formula '%s' of parameter '%s'", formula, paramName));
+
       return !v.hasStopped();
 
     });
   }
 
+  private void checkExchangeFormulas() {
+    if (v.hasStopped())
+      return;
 
+    var sql = "select " +
+      /* 1 */ "f_owner, " +
+      /* 2 */ "resulting_amount_formula, " +
+      /* 3 */ "cost_formula from tbl_exchanges";
+
+    NativeSql.on(v.db).query(sql, r -> {
+      long ownerId = r.getLong(1);
+
+      var amountFormula = r.getString(2);
+      check(ownerId, ModelType.PROCESS, amountFormula,
+        () -> "error in exchange formula '" + amountFormula + "'");
+
+      var costFormula = r.getString(3);
+      check(ownerId, ModelType.PROCESS, costFormula,
+        () -> "error in cost formula '" + costFormula + "'");
+
+      return !v.hasStopped();
+    });
+  }
+
+  private void checkAllocationFormulas() {
+    if (v.hasStopped())
+      return;
+    var sql = "select " +
+      /* 1 */ "f_process, " +
+      /* 2 */ "formula from tbl_allocation_factors";
+    NativeSql.on(v.db).query(sql, r -> {
+      long processId = r.getLong(1);
+      var formula = r.getString(2);
+      check(processId, ModelType.PROCESS, formula,
+        () -> "error in allocation formula '" + formula + "'");
+      return !v.hasStopped();
+    });
+  }
+
+  private void checkImpactFormulas() {
+    if (v.hasStopped())
+      return;
+    var sql = "select " +
+      /* 1 */ "f_impact_category, " +
+      /* 2 */ "formula from tbl_impact_factors";
+    NativeSql.on(v.db).query(sql, r -> {
+      long impactId = r.getLong(1);
+      var formula = r.getString(2);
+      check(impactId, ModelType.IMPACT_CATEGORY, formula,
+        () -> "error in factor formula '" + formula + "'");
+      return !v.hasStopped();
+    });
+  }
+
+  private void check(long modelId, ModelType modelType, String formula,
+    Supplier<String> message) {
+    if (Strings.nullOrEmpty(formula))
+      return;
+    try {
+      var scope = interpreter.getScopeOrGlobal(modelId);
+      scope.eval(formula);
+    } catch (Exception e) {
+      v.error(modelId, modelType, message.get() + ": " + e.getMessage());
+      foundErrors = true;
+    }
+  }
 }
