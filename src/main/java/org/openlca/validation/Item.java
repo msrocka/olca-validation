@@ -11,9 +11,9 @@ public class Item {
     OK,
   }
 
-  public final Type type;
-  public final Descriptor model;
-  public final String message;
+  final Type type;
+  final Descriptor model;
+  final String message;
 
   Item(Type type, Descriptor model, String message) {
     this.type = type;
@@ -58,6 +58,22 @@ public class Item {
 
   public boolean isWarning() {
     return type == Type.WARNING;
+  }
+
+  public boolean hasModel() {
+    return model != null;
+  }
+
+  public Descriptor model() {
+    return model;
+  }
+
+  public Type type() {
+    return type;
+  }
+
+  public String message() {
+    return message;
   }
 
   @Override

@@ -45,4 +45,4 @@ The following things are currently checked:
 * [x] impact methods (references)
 * [x] projects (references)
 * [x] parameters, formulas
-* [ ] flow directions
+* [x] flow directions

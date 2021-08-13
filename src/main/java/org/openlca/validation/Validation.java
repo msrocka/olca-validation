@@ -10,7 +10,6 @@ import java.util.concurrent.Executors;
 import org.openlca.core.database.Daos;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.model.ModelType;
-import org.openlca.validation.Item.Type;
 
 public class Validation implements Runnable {
 
@@ -49,7 +48,7 @@ public class Validation implements Runnable {
    * validation workers stop after the cancel signal was sent.
    */
   public void cancel() {
-    queue.add(Item.ok("validation cancelled"));
+    put(Item.ok("validation cancelled"));
     stopped = true;
   }
 
@@ -61,6 +60,7 @@ public class Validation implements Runnable {
   public void run() {
     long start = System.currentTimeMillis();
 
+    // create and start the worker threads
     var workers = new Runnable[]{
       new RootFieldCheck(this),
       new UnitCheck(this),
@@ -83,6 +83,8 @@ public class Validation implements Runnable {
       threads.execute(worker);
     }
 
+    // process the validation items. each worker must send a finish marker
+    // otherwise this loop blocks forever.
     while (activeWorkers > 0) {
       try {
         var item = queue.take();
@@ -90,7 +92,7 @@ public class Validation implements Runnable {
           activeWorkers--;
           continue;
         }
-        if (stopped || (skipWarnings && item.type == Type.WARNING)) {
+        if (stopped || (skipWarnings && item.isWarning())) {
           continue;
         }
         items.add(item);
@@ -118,23 +120,27 @@ public class Validation implements Runnable {
     return stopped;
   }
 
+  /**
+   * This method must be called by each validation check, otherwise the
+   * validation will wait forever for the check to finish.
+   */
   void workerFinished() {
-    queue.add(FINISH);
+    put(FINISH);
   }
 
   void ok(String message) {
-    queue.add(Item.ok(message));
+    put(Item.ok(message));
   }
 
   void error(String message, Throwable e) {
-    queue.add(Item.error(message, e));
+    put(Item.error(message, e));
   }
 
   void error(long id, ModelType type, String message) {
     try {
       var dao = Daos.root(db, type);
       var d = dao.getDescriptor(id);
-      queue.add(Item.error(d, message));
+      put(Item.error(d, message));
     } catch (Exception e) {
       error("failed to get descriptor " + type + "@" + id, e);
     }
@@ -144,14 +150,23 @@ public class Validation implements Runnable {
     try {
       var dao = Daos.root(db, type);
       var d = dao.getDescriptor(id);
-      queue.add(Item.warning(d, message));
+      put(Item.warning(d, message));
     } catch (Exception e) {
       error("failed to get descriptor " + type + "@" + id, e);
     }
   }
 
   void warning(String message) {
-    queue.add(Item.warning(message));
+    put(Item.warning(message));
   }
 
+  private void put(Item item) {
+    if (item == null)
+      return;
+    try {
+      queue.put(item);
+    } catch (InterruptedException e) {
+      throw new RuntimeException("failed to add item to validation queue", e);
+    }
+  }
 }
